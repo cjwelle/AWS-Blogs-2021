@@ -10,7 +10,7 @@ Parameters:
     Type: String
     Default: frlink
   CustomDomainName:
-    Description: I'm using frlink.nl for this purpose, an A record with a different name (like short.yourdomain.nl) should work as well  
+    Description: I'm using frlink.nl for this purpose, an A record with a different name (like short.yourdomain.nl) should work as well
     Type: String
     Default: frlink.nl
   StageName:
@@ -22,7 +22,7 @@ Parameters:
 
 Resources:
 
-  # DynamoDB 
+  # DynamoDB
   # ========
   DynamoDBTable:
     Type: AWS::DynamoDB::Table
@@ -30,14 +30,18 @@ Resources:
       AttributeDefinitions:
         - AttributeName: short_url
           AttributeType: "S"
+        - AttributeName: long_url
+          AttributeType: "S"
       BillingMode: PAY_PER_REQUEST
       KeySchema:
         - AttributeName: short_url
           KeyType: HASH
+        - AttributeName: long_url
+          KeyType: RANGE
       TableName: !Ref DynamoDBTableName
 
   # Lambda function
-  # ===============  
+  # ===============
   RedirectExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -61,21 +65,21 @@ Resources:
         Statement:
           -
             Effect: "Allow"
-            Action: 
+            Action:
               - "logs:PutLogEvents"
               - "logs:CreateLogStream"
               - "logs:CreateLogGroup"
             Resource: "*"
           -
             Effect: "Allow"
-            Action: 
+            Action:
               - "dynamodb:GetItem"
-            Resource: !Sub "arn:aws:dynamodb:*:*:table/${DynamoDBTableName}" 
+            Resource: !Sub "arn:aws:dynamodb:*:*:table/${DynamoDBTableName}"
       Roles:
         -
           Ref: "RedirectExecutionRole"
   RedirectFunction:
-    DependsOn: 
+    DependsOn:
     - RedirectExecutionRole
     - RedirectExecutionRolePolicies
     Type: AWS::Lambda::Function
@@ -127,11 +131,11 @@ Resources:
                       statusCode = 302
                       headers = { "location": location }
                       body = {}
-                      
+
               except Exception as e:
                   print("Error:")
                   print(e)
-              
+
               return {
                   'statusCode': statusCode,
                   'headers': headers,
@@ -195,5 +199,4 @@ Resources:
     Properties:
       DomainName: !Ref DomainName
       RestApiId: !Ref PersonalLinkShortenerAPI
-      Stage: prod
-  
+      Stage: !Ref StageName
